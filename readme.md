@@ -465,20 +465,12 @@ predictions          — customer_id · fraud_score · top_features · scored_at
 
 ---
 
-## 📜 License
-
-```
-MIT License — free to use, modify, and distribute.
-```
-
----
-
 <div align="center">
 
 <img src="https://capsule-render.vercel.app/api?type=waving&color=0:24243e,50:302b63,100:0f0c29&height=120&section=footer&animation=fadeIn" width="100%"/>
 
 **Built with obsession for catching fraud rings at graph scale.**
 
-[![GitHub stars](https://img.shields.io/github/stars/yourusername/fraud_detection?style=social)](https://github.com/yourusername/fraud_detection)
+[![GitHub stars](https://img.shields.io/github/stars/AdithyaJesuman/shadow?style=social)](https://github.com/AdithyaJesuman/shadow)
 
 </div>
