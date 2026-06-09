@@ -1,0 +1,148 @@
+# ============================================================
+# FRAUD DETECTION PIPELINE - requirements.txt
+# Python 3.11 recommended (compatible with all packages below)
+# ============================================================
+
+
+# ------------------------------------------------------------
+# DATABASES
+# ------------------------------------------------------------
+neo4j==5.20.0
+psycopg2-binary==2.9.9
+py2neo==2021.2.4
+redis==5.0.4
+sqlalchemy==2.0.30
+
+
+# ------------------------------------------------------------
+# STREAMING (pick confluent-kafka, it is more stable)
+# ------------------------------------------------------------
+confluent-kafka==2.3.0
+
+
+
+# ------------------------------------------------------------
+# DATA PROCESSING
+# ------------------------------------------------------------
+pandas==2.2.2
+numpy==1.26.4
+pyarrow==16.0.0
+scipy==1.13.0
+
+
+# ------------------------------------------------------------
+# GRAPH
+# ------------------------------------------------------------
+networkx
+node2vec
+
+
+# ------------------------------------------------------------
+# GNN - PyTorch Geometric Stack
+# Install torch FIRST before anything else in this section.
+# Then install pyg packages using the wheel URL command below.
+# DO NOT pip install torch-scatter/sparse/cluster directly.
+#
+# CPU-only command (run this manually in terminal):
+#   pip install torch==2.3.0
+#   pip install torch-geometric==2.5.3
+#   pip install pyg_lib torch_scatter torch_sparse torch_cluster torch_spline_conv \
+#       -f https://data.pyg.org/whl/torch-2.3.0+cpu.html
+#
+# GPU (CUDA 12.1) command:
+#   pip install torch==2.3.0 --index-url https://download.pytorch.org/whl/cu121
+#   pip install torch-geometric==2.5.3
+#   pip install pyg_lib torch_scatter torch_sparse torch_cluster torch_spline_conv \
+#       -f https://data.pyg.org/whl/torch-2.3.0+cu121.html
+# ------------------------------------------------------------
+torch==2.3.0
+torch-geometric==2.5.3
+
+
+# ------------------------------------------------------------
+# CLASSICAL ML
+# ------------------------------------------------------------
+scikit-learn==1.4.2
+hdbscan==0.8.38.post1
+xgboost==2.0.3
+lightgbm==4.3.0
+imbalanced-learn==0.12.3
+
+
+# ------------------------------------------------------------
+# VISUALIZATION
+# ------------------------------------------------------------
+matplotlib==3.9.0
+seaborn==0.13.2
+pyvis==0.3.2
+plotly==5.22.0
+
+
+# ------------------------------------------------------------
+# API LAYER
+# ------------------------------------------------------------
+fastapi==0.111.0
+uvicorn==0.29.0
+pydantic==2.7.1
+python-multipart==0.0.9
+httpx==0.27.0
+
+
+# ------------------------------------------------------------
+# CONFIG & UTILITIES
+# ------------------------------------------------------------
+pyyaml==6.0.1
+python-dotenv==1.0.1
+tqdm==4.66.4
+loguru==0.7.2
+tenacity==8.3.0
+
+
+# ------------------------------------------------------------
+# EXPERIMENT TRACKING & MODEL REGISTRY
+# ------------------------------------------------------------
+mlflow==2.13.0
+
+
+# ------------------------------------------------------------
+# SCHEDULING & ORCHESTRATION (upcoming features)
+# ------------------------------------------------------------
+apscheduler==3.10.4
+celery==5.4.0
+
+
+# ------------------------------------------------------------
+# MONITORING (upcoming features)
+# ------------------------------------------------------------
+prometheus-client==0.20.0
+evidently==0.4.30
+
+
+# ------------------------------------------------------------
+# TESTING
+# ------------------------------------------------------------
+pytest==8.2.0
+pytest-asyncio==0.23.7
+httpx==0.27.0
+
+
+# ============================================================
+# IMPORTANT NOTES:
+#
+# 1. torch-scatter, torch-sparse, torch-cluster are NOT listed
+#    above because they need wheel URLs matching your torch
+#    version. Use the commands in the GNN section comment above.
+#
+# 2. Install order matters:
+#    Step 1: pip install -r requirements.txt
+#    Step 2: Run the torch-geometric wheel command manually
+#
+# 3. Use Python 3.11 virtual environment:
+#    python -m venv venv
+#    venv\Scripts\activate   (Windows)
+#    source venv/bin/activate (Linux/Mac)
+#
+# 4. If on Windows, psycopg2-binary may need Visual C++ build
+#    tools. If it fails, install from:
+#    https://www.lfd.uci.edu/~gohlke/pythonlibs/#psycopg
+# ============================================================
