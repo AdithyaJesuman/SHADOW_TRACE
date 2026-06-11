@@ -158,6 +158,33 @@ def create create_all_tables():
 #INSERT - one row at a time 
 
 def insert_customer(external_id,is_fraud=false):
+    postgres=PostgresDB()
+    cursor=postgres.cursor()
+    customer_id=_gen_id()
+    cursor.execute("""
+        INSERT INTO customers (customer_id, external_id, is_fraud)
+        VALUES (%s, %s, %s) 
+        ON CONFLICT(EXTERNAL_ID) DO NOTHING
+        RETURNING customer_id;
+        """,(customer_id,external_id,is_fraud))
+
+    result=cursor.fetchone()
+
+    if result is None:
+        cursor.execute("""
+            SELECT customer_id FROM customers WHERE external_id = %s;
+        """,(external_id,))
+
+    result=cursor.fetchone()
+
+    postgres.commit()
+    cursor.close()
+    postgres.close()
+    return str(result[0])
+
+def insert_merchant(external_id):
+
+     
     
 
 

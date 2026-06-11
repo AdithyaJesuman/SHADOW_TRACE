@@ -1,0 +1,643 @@
+from .base import PostgresDBfrom src.logger import loggerimport uuid
+
+─────────────────────────────────────────────
+
+HELPERS
+
+─────────────────────────────────────────────
+
+def _gen_id():return str(uuid.uuid4())
+
+─────────────────────────────────────────────
+
+TABLE CREATION  (run once on first boot)
+
+─────────────────────────────────────────────
+
+def create_all_tables():postgres = PostgresDB()cursor   = postgres.cursor()
+
+cursor.execute("""
+    CREATE TABLE IF NOT EXISTS customers (
+        customer_id   UUID PRIMARY KEY,
+        external_id   VARCHAR(50) UNIQUE,
+        is_fraud      BOOLEAN DEFAULT FALSE,
+        created_at    TIMESTAMP DEFAULT NOW()
+    );
+""")
+
+cursor.execute("""
+    CREATE TABLE IF NOT EXISTS merchants (
+        merchant_id   UUID PRIMARY KEY,
+        external_id   VARCHAR(50) UNIQUE,
+        created_at    TIMESTAMP DEFAULT NOW()
+    );
+""")
+
+cursor.execute("""
+    CREATE TABLE IF NOT EXISTS cards (
+        card_id           UUID PRIMARY KEY,
+        card_fingerprint  VARCHAR(50),
+        card_network      VARCHAR(20),
+        card_category     VARCHAR(20),
+        created_at        TIMESTAMP DEFAULT NOW()
+    );
+""")
+
+cursor.execute("""
+    CREATE TABLE IF NOT EXISTS devices (
+        device_id     UUID PRIMARY KEY,
+        device_info   VARCHAR(255),
+        device_type   VARCHAR(20),
+        os            VARCHAR(100),
+        browser       VARCHAR(100),
+        screen_res    VARCHAR(30),
+        created_at    TIMESTAMP DEFAULT NOW()
+    );
+""")
+
+cursor.execute("""
+    CREATE TABLE IF NOT EXISTS ips (
+        ip_id        UUID PRIMARY KEY,
+        ip_address   VARCHAR(45) UNIQUE,
+        country      VARCHAR(10),
+        vpn_flag     BOOLEAN DEFAULT FALSE,
+        tor_flag     BOOLEAN DEFAULT FALSE,
+        created_at   TIMESTAMP DEFAULT NOW()
+    );
+""")
+
+cursor.execute("""
+    CREATE TABLE IF NOT EXISTS transactions (
+        tx_id          UUID PRIMARY KEY,
+        customer_id    UUID REFERENCES customers(customer_id),
+        merchant_id    UUID REFERENCES merchants(merchant_id),
+        card_id        UUID REFERENCES cards(card_id),
+        device_id      UUID REFERENCES devices(device_id),
+        ip_id          UUID REFERENCES ips(ip_id),
+        amount         FLOAT,
+        tx_type        VARCHAR(20),
+        product_code   VARCHAR(10),
+        balance_before FLOAT,
+        balance_after  FLOAT,
+        is_fraud       BOOLEAN DEFAULT FALSE,
+        is_flagged     BOOLEAN DEFAULT FALSE,
+        timestamp      TIMESTAMP,
+        created_at     TIMESTAMP DEFAULT NOW()
+    );
+""")
+
+cursor.execute("""
+    CREATE TABLE IF NOT EXISTS transaction_features (
+        feature_id     UUID PRIMARY KEY,
+        transaction_id UUID REFERENCES transactions(tx_id),
+        c1  FLOAT, c2  FLOAT, c3  FLOAT, c4  FLOAT,
+        c5  FLOAT, c6  FLOAT, c7  FLOAT, c8  FLOAT,
+        c9  FLOAT, c10 FLOAT, c11 FLOAT, c12 FLOAT,
+        c13 FLOAT, c14 FLOAT,
+        d1  FLOAT, d2  FLOAT, d3  FLOAT, d4  FLOAT,
+        d5  FLOAT, d6  FLOAT, d7  FLOAT, d8  FLOAT,
+        d9  FLOAT, d10 FLOAT, d11 FLOAT, d12 FLOAT,
+        d13 FLOAT, d14 FLOAT, d15 FLOAT,
+        m1  VARCHAR(5), m2 VARCHAR(5), m3 VARCHAR(5),
+        m4  VARCHAR(5), m5 VARCHAR(5), m6 VARCHAR(5),
+        m7  VARCHAR(5), m8 VARCHAR(5), m9 VARCHAR(5),
+        created_at TIMESTAMP DEFAULT NOW()
+    );
+""")
+
+cursor.execute("""
+    CREATE TABLE IF NOT EXISTS customer_identity (
+        identity_id    UUID PRIMARY KEY,
+        transaction_id UUID REFERENCES transactions(tx_id),
+        customer_id    UUID REFERENCES customers(customer_id),
+        id_01 FLOAT, id_02 FLOAT, id_03 FLOAT, id_04 FLOAT,
+        id_05 FLOAT, id_06 FLOAT, id_07 FLOAT, id_08 FLOAT,
+        id_09 FLOAT, id_10 FLOAT, id_11 FLOAT,
+        id_12 VARCHAR(10), id_13 FLOAT, id_14 FLOAT,
+        id_15 VARCHAR(20), id_16 VARCHAR(20),
+        id_17 FLOAT, id_18 FLOAT, id_19 FLOAT, id_20 FLOAT,
+        id_21 FLOAT, id_22 FLOAT,
+        id_23 VARCHAR(20),
+        id_24 FLOAT, id_25 FLOAT, id_26 FLOAT, id_27 FLOAT,
+        id_28 VARCHAR(20), id_29 VARCHAR(20),
+        id_30 VARCHAR(100), id_31 VARCHAR(100),
+        id_32 FLOAT,        id_33 VARCHAR(30),
+        id_34 VARCHAR(20),  id_35 VARCHAR(20),
+        id_36 VARCHAR(20),  id_37 VARCHAR(20),
+        id_38 VARCHAR(20),
+        created_at TIMESTAMP DEFAULT NOW()
+    );
+""")
+
+cursor.execute("""
+    CREATE TABLE IF NOT EXISTS login_events (
+        event_id    UUID PRIMARY KEY,
+        customer_id UUID REFERENCES customers(customer_id),
+        ip_id       UUID REFERENCES ips(ip_id),
+        device_id   UUID REFERENCES devices(device_id),
+        timestamp   TIMESTAMP,
+        created_at  TIMESTAMP DEFAULT NOW()
+    );
+""")
+
+cursor.execute("""
+    CREATE TABLE IF NOT EXISTS predictions (
+        prediction_id  UUID PRIMARY KEY,
+        customer_id    UUID REFERENCES customers(customer_id),
+        fraud_score    FLOAT,
+        top_features   TEXT,
+        scored_at      TIMESTAMP DEFAULT NOW()
+    );
+""")
+
+postgres.commit()
+cursor.close()
+postgres.close()
+logger.info("All tables created successfully")
+
+─────────────────────────────────────────────
+
+INSERT — one row at a time
+
+─────────────────────────────────────────────
+
+def insert_customer(external_id, is_fraud=False):postgres = PostgresDB()cursor   = postgres.cursor()
+
+customer_id = _gen_id()
+
+cursor.execute("""
+    INSERT INTO customers (customer_id, external_id, is_fraud)
+    VALUES (%s, %s, %s)
+    ON CONFLICT (external_id) DO NOTHING
+    RETURNING customer_id;
+""", (customer_id, external_id, is_fraud))
+
+result = cursor.fetchone()
+
+# if ON CONFLICT fired, fetch the existing id
+if result is None:
+    cursor.execute(
+        "SELECT customer_id FROM customers WHERE external_id = %s;",
+        (external_id,)
+    )
+    result = cursor.fetchone()
+
+postgres.commit()
+cursor.close()
+postgres.close()
+
+return str(result[0])
+
+def insert_merchant(external_id):postgres = PostgresDB()cursor   = postgres.cursor()
+
+merchant_id = _gen_id()
+
+cursor.execute("""
+    INSERT INTO merchants (merchant_id, external_id)
+    VALUES (%s, %s)
+    ON CONFLICT (external_id) DO NOTHING
+    RETURNING merchant_id;
+""", (merchant_id, external_id))
+
+result = cursor.fetchone()
+
+if result is None:
+    cursor.execute(
+        "SELECT merchant_id FROM merchants WHERE external_id = %s;",
+        (external_id,)
+    )
+    result = cursor.fetchone()
+
+postgres.commit()
+cursor.close()
+postgres.close()
+
+return str(result[0])
+
+def insert_card(card_fingerprint, card_network=None, card_category=None):postgres = PostgresDB()cursor   = postgres.cursor()
+
+card_id = _gen_id()
+
+cursor.execute("""
+    INSERT INTO cards (card_id, card_fingerprint, card_network, card_category)
+    VALUES (%s, %s, %s, %s)
+    RETURNING card_id;
+""", (card_id, card_fingerprint, card_network, card_category))
+
+result = cursor.fetchone()
+
+postgres.commit()
+cursor.close()
+postgres.close()
+
+return str(result[0])
+
+def insert_device(device_info, device_type=None, os=None,browser=None, screen_res=None):postgres = PostgresDB()cursor   = postgres.cursor()
+
+device_id = _gen_id()
+
+cursor.execute("""
+    INSERT INTO devices
+        (device_id, device_info, device_type, os, browser, screen_res)
+    VALUES (%s, %s, %s, %s, %s, %s)
+    RETURNING device_id;
+""", (device_id, device_info, device_type, os, browser, screen_res))
+
+result = cursor.fetchone()
+
+postgres.commit()
+cursor.close()
+postgres.close()
+
+return str(result[0])
+
+def insert_ip(ip_address, country=None, vpn_flag=False, tor_flag=False):postgres = PostgresDB()cursor   = postgres.cursor()
+
+ip_id = _gen_id()
+
+cursor.execute("""
+    INSERT INTO ips (ip_id, ip_address, country, vpn_flag, tor_flag)
+    VALUES (%s, %s, %s, %s, %s)
+    ON CONFLICT (ip_address) DO NOTHING
+    RETURNING ip_id;
+""", (ip_id, ip_address, country, vpn_flag, tor_flag))
+
+result = cursor.fetchone()
+
+if result is None:
+    cursor.execute(
+        "SELECT ip_id FROM ips WHERE ip_address = %s;",
+        (ip_address,)
+    )
+    result = cursor.fetchone()
+
+postgres.commit()
+cursor.close()
+postgres.close()
+
+return str(result[0])
+
+def insert_transaction(customer_id, amount, tx_type,merchant_id=None, card_id=None,device_id=None, ip_id=None,product_code=None, balance_before=None,balance_after=None, is_fraud=False,is_flagged=False, timestamp=None):postgres = PostgresDB()cursor   = postgres.cursor()
+
+tx_id = _gen_id()
+
+cursor.execute("""
+    INSERT INTO transactions (
+        tx_id, customer_id, merchant_id, card_id,
+        device_id, ip_id, amount, tx_type,
+        product_code, balance_before, balance_after,
+        is_fraud, is_flagged, timestamp
+    )
+    VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+    RETURNING tx_id;
+""", (
+    tx_id, customer_id, merchant_id, card_id,
+    device_id, ip_id, amount, tx_type,
+    product_code, balance_before, balance_after,
+    is_fraud, is_flagged, timestamp
+))
+
+result = cursor.fetchone()
+
+postgres.commit()
+cursor.close()
+postgres.close()
+
+return str(result[0])
+
+def insert_transaction_features(transaction_id, row: dict):"""row is a dict with keys c1..c14, d1..d15, m1..m9pulled straight from the IEEE CSV row."""postgres = PostgresDB()cursor   = postgres.cursor()
+
+feature_id = _gen_id()
+
+cursor.execute("""
+    INSERT INTO transaction_features (
+        feature_id, transaction_id,
+        c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,c13,c14,
+        d1,d2,d3,d4,d5,d6,d7,d8,d9,d10,d11,d12,d13,d14,d15,
+        m1,m2,m3,m4,m5,m6,m7,m8,m9
+    ) VALUES (
+        %s,%s,
+        %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,
+        %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,
+        %s,%s,%s,%s,%s,%s,%s,%s,%s
+    );
+""", (
+    feature_id, transaction_id,
+    row.get("C1"),  row.get("C2"),  row.get("C3"),  row.get("C4"),
+    row.get("C5"),  row.get("C6"),  row.get("C7"),  row.get("C8"),
+    row.get("C9"),  row.get("C10"), row.get("C11"), row.get("C12"),
+    row.get("C13"), row.get("C14"),
+    row.get("D1"),  row.get("D2"),  row.get("D3"),  row.get("D4"),
+    row.get("D5"),  row.get("D6"),  row.get("D7"),  row.get("D8"),
+    row.get("D9"),  row.get("D10"), row.get("D11"), row.get("D12"),
+    row.get("D13"), row.get("D14"), row.get("D15"),
+    row.get("M1"),  row.get("M2"),  row.get("M3"),  row.get("M4"),
+    row.get("M5"),  row.get("M6"),  row.get("M7"),  row.get("M8"),
+    row.get("M9"),
+))
+
+postgres.commit()
+cursor.close()
+postgres.close()
+
+def insert_customer_identity(transaction_id, customer_id, row: dict):"""row is a dict with keys id_01..id_38pulled straight from the IEEE identity CSV row."""postgres = PostgresDB()cursor   = postgres.cursor()
+
+identity_id = _gen_id()
+
+cursor.execute("""
+    INSERT INTO customer_identity (
+        identity_id, transaction_id, customer_id,
+        id_01,id_02,id_03,id_04,id_05,id_06,id_07,id_08,
+        id_09,id_10,id_11,id_12,id_13,id_14,id_15,id_16,
+        id_17,id_18,id_19,id_20,id_21,id_22,id_23,
+        id_24,id_25,id_26,id_27,id_28,id_29,
+        id_30,id_31,id_32,id_33,id_34,id_35,id_36,id_37,id_38
+    ) VALUES (
+        %s,%s,%s,
+        %s,%s,%s,%s,%s,%s,%s,%s,
+        %s,%s,%s,%s,%s,%s,%s,%s,
+        %s,%s,%s,%s,%s,%s,%s,
+        %s,%s,%s,%s,%s,%s,
+        %s,%s,%s,%s,%s,%s,%s,%s,%s
+    );
+""", (
+    identity_id, transaction_id, customer_id,
+    row.get("id_01"), row.get("id_02"), row.get("id_03"), row.get("id_04"),
+    row.get("id_05"), row.get("id_06"), row.get("id_07"), row.get("id_08"),
+    row.get("id_09"), row.get("id_10"), row.get("id_11"), row.get("id_12"),
+    row.get("id_13"), row.get("id_14"), row.get("id_15"), row.get("id_16"),
+    row.get("id_17"), row.get("id_18"), row.get("id_19"), row.get("id_20"),
+    row.get("id_21"), row.get("id_22"), row.get("id_23"),
+    row.get("id_24"), row.get("id_25"), row.get("id_26"), row.get("id_27"),
+    row.get("id_28"), row.get("id_29"),
+    row.get("id_30"), row.get("id_31"), row.get("id_32"), row.get("id_33"),
+    row.get("id_34"), row.get("id_35"), row.get("id_36"), row.get("id_37"),
+    row.get("id_38"),
+))
+
+postgres.commit()
+cursor.close()
+postgres.close()
+
+def insert_login_event(customer_id, ip_id=None,device_id=None, timestamp=None):postgres = PostgresDB()cursor   = postgres.cursor()
+
+event_id = _gen_id()
+
+cursor.execute("""
+    INSERT INTO login_events
+        (event_id, customer_id, ip_id, device_id, timestamp)
+    VALUES (%s, %s, %s, %s, %s)
+    RETURNING event_id;
+""", (event_id, customer_id, ip_id, device_id, timestamp))
+
+postgres.commit()
+cursor.close()
+postgres.close()
+
+return event_id
+
+def insert_prediction(customer_id, fraud_score, top_features=None):postgres = PostgresDB()cursor   = postgres.cursor()
+
+prediction_id = _gen_id()
+
+cursor.execute("""
+    INSERT INTO predictions
+        (prediction_id, customer_id, fraud_score, top_features)
+    VALUES (%s, %s, %s, %s)
+    RETURNING prediction_id;
+""", (prediction_id, customer_id, fraud_score, top_features))
+
+postgres.commit()
+cursor.close()
+postgres.close()
+
+return prediction_id
+
+─────────────────────────────────────────────
+
+BULK INSERT  (PaySim + IEEE CSV loads)
+
+─────────────────────────────────────────────
+
+def bulk_insert_customers(df):"""df must have columns: external_id, is_fraudUsed for PaySim nameOrig bulk load."""postgres = PostgresDB()cursor   = postgres.cursor()
+
+records = [
+    (_gen_id(), row["external_id"], bool(row.get("is_fraud", False)))
+    for _, row in df.iterrows()
+]
+
+cursor.executemany("""
+    INSERT INTO customers (customer_id, external_id, is_fraud)
+    VALUES (%s, %s, %s)
+    ON CONFLICT (external_id) DO NOTHING;
+""", records)
+
+postgres.commit()
+cursor.close()
+postgres.close()
+
+logger.info(f"Bulk inserted {len(records)} customers")
+
+def bulk_insert_merchants(df):"""df must have column: external_idUsed for PaySim nameDest M* bulk load."""postgres = PostgresDB()cursor   = postgres.cursor()
+
+records = [
+    (_gen_id(), row["external_id"])
+    for _, row in df.iterrows()
+]
+
+cursor.executemany("""
+    INSERT INTO merchants (merchant_id, external_id)
+    VALUES (%s, %s)
+    ON CONFLICT (external_id) DO NOTHING;
+""", records)
+
+postgres.commit()
+cursor.close()
+postgres.close()
+
+logger.info(f"Bulk inserted {len(records)} merchants")
+
+def bulk_insert_transactions(df):"""df must have columns matching the transactions table.Used for PaySim full CSV bulk load.Expects columns: customer_id, merchant_id, amount, tx_type,balance_before, balance_after, is_fraud,is_flagged, timestampcard_id / device_id / ip_id will be NULL at this stage —they get populated later when IEEE data is ingested."""postgres = PostgresDB()cursor   = postgres.cursor()
+
+records = []
+for _, row in df.iterrows():
+    records.append((
+        _gen_id(),
+        row.get("customer_id"),
+        row.get("merchant_id"),
+        None,   # card_id — filled later by IEEE
+        None,   # device_id — filled later by IEEE
+        None,   # ip_id — filled later
+        row.get("amount"),
+        row.get("tx_type"),
+        None,   # product_code
+        row.get("balance_before"),
+        row.get("balance_after"),
+        bool(row.get("is_fraud", False)),
+        bool(row.get("is_flagged", False)),
+        row.get("timestamp"),
+    ))
+
+cursor.executemany("""
+    INSERT INTO transactions (
+        tx_id, customer_id, merchant_id, card_id,
+        device_id, ip_id, amount, tx_type,
+        product_code, balance_before, balance_after,
+        is_fraud, is_flagged, timestamp
+    ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s);
+""", records)
+
+postgres.commit()
+cursor.close()
+postgres.close()
+
+logger.info(f"Bulk inserted {len(records)} transactions")
+
+def bulk_insert_transaction_features(df, transaction_id_map: dict):"""df  — IEEE train_transaction.csv DataFrame (C1..C14, D1..D15, M1..M9)transaction_id_map — dict mapping TransactionID (int) → tx_id (UUID str)"""postgres = PostgresDB()cursor   = postgres.cursor()
+
+records = []
+for _, row in df.iterrows():
+    tx_id = transaction_id_map.get(int(row["TransactionID"]))
+    if tx_id is None:
+        continue
+    records.append((
+        _gen_id(), tx_id,
+        row.get("C1"),  row.get("C2"),  row.get("C3"),  row.get("C4"),
+        row.get("C5"),  row.get("C6"),  row.get("C7"),  row.get("C8"),
+        row.get("C9"),  row.get("C10"), row.get("C11"), row.get("C12"),
+        row.get("C13"), row.get("C14"),
+        row.get("D1"),  row.get("D2"),  row.get("D3"),  row.get("D4"),
+        row.get("D5"),  row.get("D6"),  row.get("D7"),  row.get("D8"),
+        row.get("D9"),  row.get("D10"), row.get("D11"), row.get("D12"),
+        row.get("D13"), row.get("D14"), row.get("D15"),
+        row.get("M1"),  row.get("M2"),  row.get("M3"),  row.get("M4"),
+        row.get("M5"),  row.get("M6"),  row.get("M7"),  row.get("M8"),
+        row.get("M9"),
+    ))
+
+cursor.executemany("""
+    INSERT INTO transaction_features (
+        feature_id, transaction_id,
+        c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,c13,c14,
+        d1,d2,d3,d4,d5,d6,d7,d8,d9,d10,d11,d12,d13,d14,d15,
+        m1,m2,m3,m4,m5,m6,m7,m8,m9
+    ) VALUES (
+        %s,%s,
+        %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,
+        %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,
+        %s,%s,%s,%s,%s,%s,%s,%s,%s
+    );
+""", records)
+
+postgres.commit()
+cursor.close()
+postgres.close()
+
+logger.info(f"Bulk inserted {len(records)} transaction feature rows")
+
+─────────────────────────────────────────────
+
+QUERY FUNCTIONS
+
+─────────────────────────────────────────────
+
+def get_customer_transactions(customer_id):postgres = PostgresDB()cursor   = postgres.cursor()
+
+cursor.execute("""
+    SELECT tx_id, amount, tx_type, is_fraud, timestamp
+    FROM transactions
+    WHERE customer_id = %s
+    ORDER BY timestamp ASC;
+""", (customer_id,))
+
+rows = cursor.fetchall()
+cursor.close()
+postgres.close()
+
+return rows
+
+def get_all_customers():postgres = PostgresDB()cursor   = postgres.cursor()
+
+cursor.execute("""
+    SELECT customer_id, external_id, is_fraud
+    FROM customers;
+""")
+
+rows = cursor.fetchall()
+cursor.close()
+postgres.close()
+
+return rows
+
+def get_device_by_fingerprint(device_info):postgres = PostgresDB()cursor   = postgres.cursor()
+
+cursor.execute("""
+    SELECT device_id FROM devices
+    WHERE device_info = %s
+    LIMIT 1;
+""", (device_info,))
+
+row = cursor.fetchone()
+cursor.close()
+postgres.close()
+
+return str(row[0]) if row else None
+
+def get_ip_by_address(ip_address):postgres = PostgresDB()cursor   = postgres.cursor()
+
+cursor.execute("""
+    SELECT ip_id, country, vpn_flag, tor_flag
+    FROM ips
+    WHERE ip_address = %s
+    LIMIT 1;
+""", (ip_address,))
+
+row = cursor.fetchone()
+cursor.close()
+postgres.close()
+
+return row
+
+def get_fraud_customers():postgres = PostgresDB()cursor   = postgres.cursor()
+
+cursor.execute("""
+    SELECT customer_id, external_id
+    FROM customers
+    WHERE is_fraud = TRUE;
+""")
+
+rows = cursor.fetchall()
+cursor.close()
+postgres.close()
+
+return rows
+
+def get_high_score_predictions(threshold=0.85):postgres = PostgresDB()cursor   = postgres.cursor()
+
+cursor.execute("""
+    SELECT customer_id, fraud_score, top_features, scored_at
+    FROM predictions
+    WHERE fraud_score >= %s
+    ORDER BY fraud_score DESC;
+""", (threshold,))
+
+rows = cursor.fetchall()
+cursor.close()
+postgres.close()
+
+return rows
+
+def get_customer_velocity(customer_id, hours=24):"""Returns transaction count for a customerwithin the last N hours. Used in features.py."""postgres = PostgresDB()cursor   = postgres.cursor()
+
+cursor.execute("""
+    SELECT COUNT(*)
+    FROM transactions
+    WHERE customer_id = %s
+      AND timestamp >= NOW() - INTERVAL '%s hours';
+""", (customer_id, hours))
+
+row = cursor.fetchone()
+cursor.close()
+postgres.close()
+
+return int(row[0]) if row else 0
