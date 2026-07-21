@@ -1,9 +1,9 @@
 postgres:
-  host: localhost
+  host: db.nnvuhwnbrodbyuddwytm.supabase.co
   port: 5432
-  database: fraud
+  database: postgres
   user: postgres
-  password: password
+  password: Maxmustard81845
 
 neo4j:
   uri: bolt://localhost:7687
@@ -11,6 +11,7 @@ neo4j:
   password: password
 
 redis:
+
   host: localhost
   port: 6379
   db: 0
