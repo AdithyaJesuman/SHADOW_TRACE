@@ -2,50 +2,49 @@ from pydantic import BaseModel,Field,ConfigDict
 from typing import Optional
 from uuid import UUID
 from datetime import datetime
-ST_PT=r"^(in transit |delivered | Pending |processing)$"
 
 
 class customer(BaseModel):
-    customer_id:UUID=Field(description="CustomerID",gt=0,examples=[1])
+    customer_id:UUID=Field(description="CustomerID")
     external_id:str=Field(description="ExternalID",min_length=2,max_length=30)
     is_fraud:bool=Field(description="IsFraud",default=False)
-    created_at:datetime=Field(description="CreatedAt",default=datetime.now())
+    created_at:datetime=Field(description="CreatedAt",default_factory=datetime.now)
 
 class merchant(BaseModel):
-    merchant_id:UUID=Field(description="MerchantID",gt=0,examples=[1])
+    merchant_id:UUID=Field(description="MerchantID")
     external_id:str=Field(description="ExternalID",min_length=2,max_length=30)
-    created_at:datetime=Field(description="CreatedAt",default=datetime.now())
+    created_at:datetime=Field(description="CreatedAt",default_factory=datetime.now)
 
 class card(BaseModel):
-    card_id:UUID=Field(description="CardID",gt=0,examples=[1])
+    card_id:UUID=Field(description="CardID")
     card_fingerprint:str=Field(description="CardFingerprint",min_length=2,max_length=50)
     card_network:str=Field(description="CardNetwork",min_length=2,max_length=25)
     card_category:str=Field(description="CardCategory",min_length=2,max_length=25)
-    created_at:datetime=Field(description="CreatedAt",default=datetime.now())
+    created_at:datetime=Field(description="CreatedAt",default_factory=datetime.now)
 
 class device(BaseModel):
-    device_id:UUID=Field(description="DeviceID",gt=0,examples=[1])
+    device_id:UUID=Field(description="DeviceID")
     device_info:str=Field(description="DeviceInfo",min_length=2,max_length=300)
     device_type:str=Field(description="DeviceType",min_length=2,max_length=20)
     os:str=Field(description="OS",min_length=2,max_length=200)
     browser:str=Field(description="Browser",min_length=2,max_length=200)
     screen_res:str=Field(description="ScreenRes",min_length=2,max_length=30)
-    created_at:datetime=Field(description="CreatedAt",default=datetime.now())
+    created_at:datetime=Field(description="CreatedAt",default_factory=datetime.now)
 
 class ips(BaseModel):
-    ip_id:UUID=Field(description="IPID",gt=0,examples=[1])
+    ip_id:UUID=Field(description="IPID")
     ip_address:str=Field(description="IPAddress",min_length=2,max_length=45)
     country:str=Field(description="Country",min_length=2,max_length=10)
     vpn_flag:bool=Field(description="VPNFlag",default=False)
     tor_flag:bool=Field(description="TORFlag",default=False)
 
 class transaction(BaseModel):
-    tx_id:UUID=Field(description="TransactionID",gt=0,examples=[1])
-    customer_id:UUID=Field(description="CustomerID",gt=0,examples=[1])
-    merchant_id:UUID=Field(description="MerchantID",gt=0,examples=[1])
-    card_id:UUID=Field(description="CardID",gt=0,examples=[1])
-    device_id:UUID=Field(description="DeviceID",gt=0,examples=[1])
-    ip_id:UUID=Field(description="IPID",gt=0,examples=[1])
+    tx_id:UUID=Field(description="TransactionID")
+    customer_id:UUID=Field(description="CustomerID")
+    merchant_id:UUID=Field(description="MerchantID")
+    card_id:UUID=Field(description="CardID")
+    device_id:UUID=Field(description="DeviceID")
+    ip_id:UUID=Field(description="IPID")
     amount:float=Field(description="Amount")
     tx_type:str=Field(description="TransactionType",min_length=2,max_length=20)
     product_code:str=Field(description="ProductCode",min_length=2,max_length=20)
@@ -54,11 +53,11 @@ class transaction(BaseModel):
     is_fraud:bool=Field(description="IsFraud",default=False)
     is_flagged:bool=Field(description="IsFlagged",default=False)
     timestamp:datetime=Field(description="Timestamp")
-    created_at:datetime=Field(description="CreatedAt",default=datetime.now())
+    created_at:datetime=Field(description="CreatedAt",default_factory=datetime.now)
 
 class transaction_features(BaseModel):
-    feature_id:UUID=Field(description="FeatureID",gt=0,examples=[1])
-    transaction_id:UUID=Field(description="TransactionID",gt=0,examples=[1])
+    feature_id:UUID=Field(description="FeatureID")
+    transaction_id:UUID=Field(description="TransactionID")
 
     
     c1: float=Field(description="C1")
@@ -101,9 +100,9 @@ class transaction_features(BaseModel):
     m7: str=Field(description="M7")
     m8: str=Field(description="M8")
     m9: str=Field(description="M9")
-    created_at:datetime=Field(description="CreatedAt",default=datetime.now())
+    created_at:datetime=Field(description="CreatedAt",default_factory=datetime.now)
 
-class IdentitySchema(BaseModel):
+class customer_identity(BaseModel):
     identity_id: UUID = Field(description="Unique identifier for the identity record")
     transaction_id: UUID = Field(description="ID of the associated transaction")
     customer_id: UUID = Field(description="ID of the associated customer")
@@ -148,16 +147,16 @@ class IdentitySchema(BaseModel):
     created_at: datetime = Field(description="Timestamp when the identity record was created")
 
 class login_event(BaseModel):
-    event_id:UUID=Field(description="EventID",gt=0,examples=[1])
-    customer_id:UUID=Field(description="CustomerID",gt=0,examples=[1])
-    ip_id:UUID=Field(description="IPID",gt=0,examples=[1])
+    event_id:UUID=Field(description="EventID")
+    customer_id:UUID=Field(description="CustomerID")
+    ip_id:UUID=Field(description="IPID")
     timestamp:datetime=Field(description="Timestamp")
-    created_at:datetime=Field(description="CreatedAt",default=datetime.now())
+    created_at:datetime=Field(description="CreatedAt",default_factory=datetime.now)
 
 class prediction(BaseModel):
-    prediction_id:UUID=Field(description="PredictionID",gt=0,examples=[1])
-    customer_id:UUID=Field(description="CustomerID",gt=0,examples=[1])
+    prediction_id:UUID=Field(description="PredictionID")
+    customer_id:UUID=Field(description="CustomerID")
     fraud_score:float=Field(description="FraudScore")
     top_feature:str=Field(description="TopFeature",min_length=2,max_length=100)
-    scored_at:datetime=Field(description="ScoredAt",default=datetime.now())
+    scored_at:datetime=Field(description="ScoredAt",default_factory=datetime.now)
 
