@@ -9,7 +9,7 @@ class CustomerDB(Base):
     __tablename__="customers"
 
     customer_id:Mapped[uuid.UUID]=mapped_column(UUID(as_uuid=True),primary_key=True,default=uuid.uuid4)
-    external_id:Mapped[str]=mapped_column(String(50),nullable=False,index=True)
+    external_id:Mapped[str]=mapped_column(String(50),nullable=False,index=True,unique=True)
     is_fraud:Mapped[bool]=mapped_column(Boolean,default=False,index=True)
     risk_score:Mapped[float]=mapped_column(Float,default=0.0)
     created_at:Mapped[datetime]=mapped_column(DateTime,server_default=text("NOW()"))
@@ -34,7 +34,7 @@ class MerchantDB(Base):
 class CardDB(Base):
     __tablename__="cards"
     card_id:Mapped[uuid.UUID]=mapped_column(UUID(as_uuid=True),primary_key=True,default=uuid.uuid4)
-    card_fingerprint:Mapped[str]=mapped_column(String(50),unique=True,nullable=False,index=True)
+    card_fingerprint:Mapped[str]=mapped_column(String(50),nullable=False,index=True,unique=True)
     card_network: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
     card_category: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
     created_at:Mapped[datetime]=mapped_column(DateTime,server_default=text("NOW()"))
@@ -101,7 +101,6 @@ class TransactionDB(Base):
     ip: Mapped[Optional["IPDB"]] = relationship(back_populates="transactions")
     features: Mapped[Optional["TransactionFeaturesDB"]] = relationship(back_populates="transaction", uselist=False)
     identity: Mapped[Optional["CustomerIdentityDB"]] = relationship(back_populates="transaction", uselist=False)
-
 
 
 
