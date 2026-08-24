@@ -44,19 +44,19 @@ node2vec
 # DO NOT pip install torch-scatter/sparse/cluster directly.
 #
 # CPU-only command (run this manually in terminal):
-#   pip install torch==2.3.0
-#   pip install torch-geometric==2.5.3
+#   pip install torch==2.13.0
+#   pip install torch-geometric==2.8.0
 #   pip install pyg_lib torch_scatter torch_sparse torch_cluster torch_spline_conv \
-#       -f https://data.pyg.org/whl/torch-2.3.0+cpu.html
+#       -f https://data.pyg.org/whl/torch-2.13.0+cpu.html
 #
 # GPU (CUDA 12.1) command:
-#   pip install torch==2.3.0 --index-url https://download.pytorch.org/whl/cu121
-#   pip install torch-geometric==2.5.3
+#   pip install torch==2.13.0 --index-url https://download.pytorch.org/whl/cu121
+#   pip install torch-geometric==2.8.0
 #   pip install pyg_lib torch_scatter torch_sparse torch_cluster torch_spline_conv \
-#       -f https://data.pyg.org/whl/torch-2.3.0+cu121.html
+#       -f https://data.pyg.org/whl/torch-2.13.0+cu121.html
 # ------------------------------------------------------------
-torch==2.3.0
-torch-geometric==2.5.3
+torch==2.13.0
+torch-geometric==2.8.0
 
 
 # ------------------------------------------------------------
@@ -84,7 +84,7 @@ plotly==5.22.0
 fastapi==0.111.0
 uvicorn==0.29.0
 pydantic==2.7.1
-python-multipart==0.0.9
+python-multipart==0.0.32
 httpx==0.27.0
 
 
@@ -101,7 +101,7 @@ tenacity==8.3.0
 # ------------------------------------------------------------
 # EXPERIMENT TRACKING & MODEL REGISTRY
 # ------------------------------------------------------------
-mlflow==2.13.0
+mlflow==3.15.1
 
 
 # ------------------------------------------------------------
