@@ -1,33 +1,3 @@
-<<<<<<< HEAD
-
-import uuid
-from contextlib import asynccontextmanager
-
-import asyncpg
-from fastapi import FastAPI, HTTPException, Depends
-from fastapi.responses import JSONResponse
-from sqlalchemy import select
-from sqlalchemy.orm import selectinload
-from sqlalchemy.ext.asyncio import AsyncSession
-
-from app import model
-from app.database import get_db          
-
-from src.adapters import ps           
-import api_schemas as api
-
-@asynccontextmanager
-async def lifespan(app:FastAPI):
-    await ps.create_all_tables()
-    yield
-
-app=FastAPI(title="Shadow Trace", lifespan=lifespan)
-
-
-@app.exception_handler(asyncpg.ForeignKeyViolationError)
-async def fk_violation_handler(request,exc):
-    return JSONResponse(400,{"error":"foreign_key_violation","detail":"a reference parent doesnt exsist yet"})
-=======
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -38,10 +8,9 @@ from contextlib import asynccontextmanager
 import uuid
 import asyncpg
 
-from .database import get_db
-from . import model
-from . import schema
-from . import api_schemas as api
+from app.database import get_db
+from app import model
+from app import api_schemas as api
 from src.adapters import ps
 from src.adapters.base import close_pool
 
@@ -67,23 +36,14 @@ app.add_middleware(
 @app.exception_handler(asyncpg.ForeignKeyViolationError)
 async def fk_violation_handler(request, exc):
     return JSONResponse(status_code=400, content={"error": "foreign_key_violation", "detail": "a referenced parent doesn't exist yet"})
->>>>>>> 83b84e9 (do it)
 
 
 @app.exception_handler(asyncpg.UniqueViolationError)
 async def unique_violation_handler(request, exc):
-<<<<<<< HEAD
-    return JSONResponse(409, {"error": "unique_violation", "detail": str(exc)})
-
-
-
-
-=======
     return JSONResponse(status_code=409, content={"error": "unique_violation", "detail": str(exc)})
 
 
 # ── helpers ──────────────────────────────────────────────────────────────────
->>>>>>> 83b84e9 (do it)
 
 def _row_to_dict(obj, relations: tuple = ()) -> dict | None:
     if obj is None:
@@ -98,25 +58,6 @@ def _row_to_dict(obj, relations: tuple = ()) -> dict | None:
     return data
 
 
-<<<<<<< HEAD
-
-
-@app.get("/customer/{external_id}")
-async def read_customer(external_id:str,db:AsyncSession=Depends(get_db)):
-    stmt=(select(models.CustomerDB)
-        .where(models.CustomerDb.external_id==external_id)
-        .options(
-            selectinload(models.CustomerDB.transactions),
-            selectinload(models.CustomerDB.login_events),
-            selectinload(models.CustomerDB.predictions),
-            selectinload(models.CustomerDB.identities),
-        )
-    )
-    row=(await db.execute(stmt)).scalar_one_or_none()
-    if row is None:
-        raise HTTPSException(404,"customer not found")
-return _row_to_dict(row, relations=("transactions", "login_events", "predictions", "identities"))
-=======
 # ── GET routes ────────────────────────────────────────────────────────────────
 
 @app.get("/transactions")
@@ -352,7 +293,7 @@ import os
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
-dist_dir = os.path.join(os.path.dirname(__dirname), "frontend", "dist")
+dist_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "frontend", "dist")
 if os.path.exists(dist_dir):
     app.mount("/assets", StaticFiles(directory=os.path.join(dist_dir, "assets")), name="assets")
     
@@ -362,4 +303,3 @@ if os.path.exists(dist_dir):
         if os.path.exists(file_path) and os.path.isfile(file_path):
             return FileResponse(file_path)
         return FileResponse(os.path.join(dist_dir, "index.html"))
->>>>>>> 83b84e9 (do it)

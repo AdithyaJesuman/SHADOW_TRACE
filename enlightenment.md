@@ -36,15 +36,18 @@ This folder contains the React application built with Vite, Tailwind CSS, and Re
 
 ## 🚀 How to turn it on (One-Click)
 
-The backend and frontend are **Unified**. FastAPI serves the React app directly, so you only need to run one backend server!
+The backend and frontend are properly connected, and we have reserved a spot for your ML code!
 
 Simply go to your project folder and double-click **`start.bat`**. This script will automatically:
 1. Start the PostgreSQL Docker container.
 2. Start the Neo4j Docker container.
-3. Open a terminal window and run `uvicorn app.main:app` (using your Anaconda `base` environment).
+3. Open a terminal window running `uvicorn app.main:app` (Backend API).
+4. Open a terminal window running `npm run dev` (React Dashboard).
+5. Open a blank terminal window specifically for you to run your ML scripts!
 
-Once the terminal pops up, your entire application is available at:
-👉 **`http://localhost:8000`**
+Once the terminals pop up, your application is available at:
+👉 **Backend:** `http://localhost:8000`
+👉 **Dashboard:** `http://localhost:5173`
 
 ---
 

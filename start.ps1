@@ -1,12 +1,12 @@
 # ==========================================
-# SHADOW TRACE - Startup Script
+# SHADOW TRACE - Startup Script (Unified)
 # ==========================================
 
-Write-Host "🚀 Starting SHADOW TRACE..." -ForegroundColor Cyan
+Write-Host "🚀 Starting SHADOW TRACE Unified Engine..." -ForegroundColor Cyan
 Write-Host "----------------------------------" -ForegroundColor Cyan
 
-# 1. Start Databases (Checks if they exist, starts them if they do, creates them if they don't)
-Write-Host "[1/3] Starting Databases (Postgres & Neo4j)..." -ForegroundColor Yellow
+# 1. Start Databases
+Write-Host "[1/2] Starting Databases (Postgres & Neo4j)..." -ForegroundColor Yellow
 
 $postgresExists = docker ps -a -q -f name=postgres-db
 if (!$postgresExists) {
@@ -24,18 +24,12 @@ if (!$neo4jExists) {
 
 Start-Sleep -Seconds 3
 
-# 2. Start FastAPI Backend in a new window
-Write-Host "[2/3] Starting FastAPI Backend (Port 8000)..." -ForegroundColor Yellow
-$backendCmd = "cd 'C:\Users\adith\OneDrive\Desktop\db+fast api'; Write-Host 'Starting Backend...'; uvicorn app.main:app --host 0.0.0.0 --port 8000"
+# 2. Start FastAPI Unified Backend in a new window
+Write-Host "[2/2] Starting Unified Engine (Backend + Frontend)..." -ForegroundColor Yellow
+$backendCmd = "cd `"$PSScriptRoot\backend`"; Write-Host 'Starting Unified Engine...'; uvicorn app.main:app --host 0.0.0.0 --port 8000"
 Start-Process powershell -ArgumentList "-NoExit", "-Command", $backendCmd
 
-# 3. Start React Frontend in a new window
-Write-Host "[3/3] Starting React Frontend (Port 5173)..." -ForegroundColor Yellow
-$frontendCmd = "cd 'C:\Users\adith\OneDrive\Desktop\db+fast api\frontend'; Write-Host 'Starting Frontend Docker...'; docker run --rm -v `"C:\Users\adith\OneDrive\Desktop\db+fast api\frontend:/app`" -w /app -p 5173:5173 node:20-alpine sh -c `"npm install && npm run dev -- --host 0.0.0.0`""
-Start-Process powershell -ArgumentList "-NoExit", "-Command", $frontendCmd
-
 Write-Host "----------------------------------" -ForegroundColor Cyan
-Write-Host "✅ All systems are booting up in separate windows!" -ForegroundColor Green
-Write-Host "👉 Backend will be at: http://localhost:8000" -ForegroundColor White
-Write-Host "👉 Dashboard will be at: http://localhost:5173" -ForegroundColor White
+Write-Host "✅ All systems are booting up!" -ForegroundColor Green
+Write-Host "👉 Application is available at: http://localhost:8000" -ForegroundColor White
 Write-Host "You can close this specific terminal window now if you want." -ForegroundColor Gray

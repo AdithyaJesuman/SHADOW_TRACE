@@ -1,27 +1,17 @@
 import uuid
 from datetime import datetime
 from typing import Optional, List, Dict
-<<<<<<< HEAD
-from sqlalchemy import Boolean, Float, String, DateTime, ForeignKey, Index, text
-from sqlalchemy.dialects.postgresql import UUID, JSONB
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-from database import Base
-=======
 from decimal import Decimal
 from sqlalchemy import Boolean, Float, Numeric, String, DateTime, ForeignKey, Index, text
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from .database import Base
->>>>>>> 83b84e9 (do it)
+from app.database import Base
+
 class CustomerDB(Base):
     __tablename__="customers"
 
     customer_id:Mapped[uuid.UUID]=mapped_column(UUID(as_uuid=True),primary_key=True,default=uuid.uuid4)
-<<<<<<< HEAD
     external_id:Mapped[str]=mapped_column(String(50),nullable=False,index=True,unique=True)
-=======
-    external_id:Mapped[str]=mapped_column(String(50),nullable=False,index=True)
->>>>>>> 83b84e9 (do it)
     is_fraud:Mapped[bool]=mapped_column(Boolean,default=False,index=True)
     risk_score:Mapped[float]=mapped_column(Float,default=0.0)
     created_at:Mapped[datetime]=mapped_column(DateTime,server_default=text("NOW()"))
@@ -46,11 +36,7 @@ class MerchantDB(Base):
 class CardDB(Base):
     __tablename__="cards"
     card_id:Mapped[uuid.UUID]=mapped_column(UUID(as_uuid=True),primary_key=True,default=uuid.uuid4)
-<<<<<<< HEAD
-    card_fingerprint:Mapped[str]=mapped_column(String(50),nullable=False,index=True,unique=True)
-=======
     card_fingerprint:Mapped[str]=mapped_column(String(50),unique=True,nullable=False,index=True)
->>>>>>> 83b84e9 (do it)
     card_network: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
     card_category: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
     created_at:Mapped[datetime]=mapped_column(DateTime,server_default=text("NOW()"))
@@ -99,19 +85,12 @@ class TransactionDB(Base):
     device_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), ForeignKey("devices.device_id"), nullable=True)
     ip_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), ForeignKey("ips.ip_id"), nullable=True)
 
-<<<<<<< HEAD
-    amount: Mapped[float] = mapped_column(Float, index=True)
-    tx_type: Mapped[str] = mapped_column(String(20))
-    product_code: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
-    balance_before: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
-    balance_after: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
-=======
     amount: Mapped[Decimal] = mapped_column(Numeric, index=True)
     tx_type: Mapped[str] = mapped_column(String(20))
     product_code: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
     balance_before: Mapped[Optional[Decimal]] = mapped_column(Numeric, nullable=True)
     balance_after: Mapped[Optional[Decimal]] = mapped_column(Numeric, nullable=True)
->>>>>>> 83b84e9 (do it)
+
     is_fraud: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
     is_flagged: Mapped[bool] = mapped_column(Boolean, default=False)
     idempotency_key: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
@@ -127,11 +106,6 @@ class TransactionDB(Base):
     identity: Mapped[Optional["CustomerIdentityDB"]] = relationship(back_populates="transaction", uselist=False)
 
 
-
-<<<<<<< HEAD
-=======
-
->>>>>>> 83b84e9 (do it)
 class TransactionFeaturesDB(Base):
     __tablename__ = "transaction_features"
 
@@ -235,9 +209,6 @@ class CustomerIdentityDB(Base):
 
     transaction: Mapped["TransactionDB"] = relationship(back_populates="identity")
     customer: Mapped["CustomerDB"] = relationship(back_populates="identities")
-
-
-
 
 
 class LoginEventDB(Base):
