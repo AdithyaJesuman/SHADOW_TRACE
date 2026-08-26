@@ -9,7 +9,6 @@ from app.database import Base
 
 class CustomerDB(Base):
     __tablename__="customers"
-
     customer_id:Mapped[uuid.UUID]=mapped_column(UUID(as_uuid=True),primary_key=True,default=uuid.uuid4)
     external_id:Mapped[str]=mapped_column(String(50),nullable=False,index=True,unique=True)
     is_fraud:Mapped[bool]=mapped_column(Boolean,default=False,index=True)

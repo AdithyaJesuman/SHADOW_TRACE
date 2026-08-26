@@ -7,7 +7,6 @@ logging.basicConfig(
 
 logger = logging.getLogger("fraud")
 
-# Add a .success() convenience method
 logging.SUCCESS = 25
 logging.addLevelName(logging.SUCCESS, "SUCCESS")
 

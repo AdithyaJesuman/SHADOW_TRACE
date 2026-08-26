@@ -1,11 +1,7 @@
 import os
 import asyncpg
-
 _pool: asyncpg.Pool | None = None
-
-
 async def get_pool() -> asyncpg.Pool:
-    """Return (and lazily create) the shared asyncpg connection pool."""
     global _pool
     if _pool is None:
         dsn = os.environ.get(
@@ -23,7 +19,6 @@ async def get_pool() -> asyncpg.Pool:
 
 
 async def close_pool() -> None:
-    """Close the pool on shutdown."""
     global _pool
     if _pool is not None:
         await _pool.close()

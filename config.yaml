@@ -6,15 +6,17 @@ postgres:
   password: Maxmustard81845
 
 neo4j:
-  uri: bolt://localhost:7687
-  user: neo4j
-  password: password
+  uri: neo4j+s://bc64524a.databases.neo4j.io
+  user: bc64524a
+  password: QxlECbAJVrXZw1bU5nDdoL870lP8DaKORiNsje2j9Nk
 
 redis:
 
-  host: localhost
+  host: https://topical-wolf-121660.upstash.io
+  uri: rediss://default_ro:ggAAAAAAAds8AAIgcDHwBqeiUWadxHhpGNOwRXo-mZNGskHtE7onfHQAxX12UA@topical-wolf-121660.upstash.io:6379
   port: 6379
-  db: 0
+  db: reddBro
+  api: af001889-7464-49d1-a0a7-a8fd8baa946b
 
 
 
