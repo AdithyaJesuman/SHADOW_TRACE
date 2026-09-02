@@ -8,7 +8,8 @@ from contextlib import asynccontextmanager
 import uuid,asyncpg,os
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
-
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
 
 from app.database import get_db
 from app import model
@@ -64,7 +65,7 @@ async def list_transactions(
     db: AsyncSession = Depends(get_db),
     limit: int = 100,
     offset: int = 0,
-    is_flagged: bool = None,
+    is_flagged: bool = None, # type: ignore
 ):
     stmt = select(model.TransactionDB)
     if is_flagged is not None:
@@ -223,28 +224,28 @@ async def create_ip(body: api.IPCreate):
 ##########################################
 
 @app.post("/transactions", status_code=202)
-async def create_transaction(body: api.TransactionCreate,bg_tasks:BackgroundTasks):
-    tx_data=body.model_dump()
+async def create_transaction(body: api.TransactionCreate):
+    tx_data = body.model_dump()
     send_transactions(
         topic="transactions_raw",
         key=body.customer_id,
         value=tx_data
     )
-    bg_tasks.add_task(trigger_callback)
+    trigger_callback()
     return {
         "status": "Accepted", 
         "message": "Transaction sent to intelligence engine for scoring."
     }
 
 @app.post("/login-events", status_code=202)
-async def create_login_event(body: api.LoginEventCreate,bg_tasks:BackgroundTasks):
-    tx_data=body.model_dump()
+async def create_login_event(body: api.LoginEventCreate):
+    tx_data = body.model_dump()
     send_transactions(
         topic="login_events_raw",
         key=body.customer_external_id,
         value=tx_data
     )
-    bg_tasks.add_task(trigger_callback)
+    trigger_callback()
     return {
         "status": "Accepted", 
         "message": "Login-Events sent to intelligence engine for scoring."

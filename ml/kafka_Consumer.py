@@ -26,11 +26,11 @@ async def process_transaction(data:dict):
 async def process_login_event(data:dict):
     customer_id = await ps.insert_customer(external_id=data['customer_external_id'])
     await ps.insert_login_event(customer_id=customer_id,success=data.get('success',True))
-    logger.info(f"✅ DB Saved Login Event for {data['customer_external_id']}")
-async def run_consumer():
+    logger.info(f"DB Saved Login Event for {data['customer_external_id']}")
     
+async def run_consumer():
     await ps.create_all_tables()
-    logger.info("🎧 Kafka Consumer started. Listening for events...")
+    logger.info("Kafka Consumer started. Listening for events...")
     try:
         while True:
             
@@ -40,7 +40,7 @@ async def run_consumer():
                 continue 
                 
             if msg.error():
-                logger.error(f"❌ Kafka Error: {msg.error()}")
+                logger.error(f" Kafka Error: {msg.error()}")
                 continue
             
             topic = msg.topic()
@@ -52,7 +52,7 @@ async def run_consumer():
             elif topic == "login_events_raw":
                 await process_login_event(data)
     except KeyboardInterrupt:
-        logger.info("🛑 Shutting down consumer manually...")
+        logger.info("Shutting down consumer manually...")
     finally:
         consumer.close()
 

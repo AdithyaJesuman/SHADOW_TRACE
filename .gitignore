@@ -1,0 +1,85 @@
+# ============================================================
+# .gitignore - SHADOW TRACE
+# ============================================================
+
+# Credentials & Environment
+.env
+.env.local
+.env.*.local
+config.yaml
+SECURITY.md
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Docker
+.dockerignore
+docker-compose.override.yml
+
+# Logs
+logs/
+*.log
+*.log.*
+
+# Data & Models
+data/
+ml/models/
+ml/checkpoints/
+*.pth
+*.pkl
+*.joblib
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Frontend
+frontend/node_modules/
+frontend/.next
+frontend/build
+frontend/dist
+frontend/.env.local
+
+# Misc
+.venv
+.python-version
+.pre-commit-config.yaml
+Thumbs.db
