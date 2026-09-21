@@ -1,119 +1,205 @@
-import React, { useState } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Activity, ShieldAlert, LayoutDashboard, Database, ActivitySquare, ShieldCheck, Sparkles } from 'lucide-react';
+import { 
+    LayoutDashboard, Network, Activity, ShieldAlert, User, 
+    Cpu, Zap, Radio, Bell, Search, Shield, ChevronRight, Sparkles
+} from 'lucide-react';
+
+import Dashboard from './components/Dashboard';
+import RingExplorer from './components/RingExplorer';
 import LiveFeed from './components/LiveFeed';
 import ReviewQueue from './components/ReviewQueue';
-import Dashboard from './components/Dashboard';
+import CustomerProfiles from './components/CustomerProfiles';
+import ModelMetrics from './components/ModelMetrics';
+import Simulator from './components/Simulator';
+import TransactionDetail from './components/TransactionDetail';
+import { api } from './services/api';
 
-const views = {
-    overview: { label: 'Overview', icon: <LayoutDashboard size={18} />, component: <Dashboard /> },
-    feed: { label: 'Live Stream', icon: <Activity size={18} />, component: <LiveFeed /> },
-    queue: { label: 'Review Queue', icon: <ShieldAlert size={18} />, component: <ReviewQueue /> },
-    customers: { label: 'Profiles', icon: <Database size={18} />, component: <ComingSoon title="Customer Profiles" /> },
-    metrics: { label: 'Model Metrics', icon: <ActivitySquare size={18} />, component: <ComingSoon title="Model Performance" /> },
-};
-
-function ComingSoon({ title }) {
-    return (
-        <motion.div 
-            initial={{ opacity: 0, scale: 0.9 }} 
-            animate={{ opacity: 1, scale: 1 }} 
-            className="p-8 flex items-center justify-center h-full"
-        >
-            <div className="text-center text-slate-500">
-                <div className="text-6xl mb-6 animate-pulse opacity-50">🚧</div>
-                <h2 className="text-2xl font-bold text-slate-300">{title}</h2>
-                <p className="text-sm mt-3 text-slate-500">This module is under construction.</p>
-            </div>
-        </motion.div>
-    );
-}
+const navigationItems = [
+    { id: 'overview', label: 'Command Center', icon: <LayoutDashboard size={17} />, badge: null },
+    { id: 'rings', label: 'Graph Rings', icon: <Network size={17} />, badge: '3 Active' },
+    { id: 'feed', label: 'Live Stream', icon: <Activity size={17} />, badge: '1.4k/s' },
+    { id: 'queue', label: 'Review Queue', icon: <ShieldAlert size={17} />, badge: 'Critical' },
+    { id: 'customers', label: 'Entity 360°', icon: <User size={17} />, badge: null },
+    { id: 'metrics', label: 'GNN Architecture', icon: <Cpu size={17} />, badge: '98.4%' },
+    { id: 'simulator', label: 'Attack Studio', icon: <Zap size={17} />, badge: 'Simulator' },
+];
 
 function App() {
     const [activeView, setActiveView] = useState('overview');
+    const [selectedTxId, setSelectedTxId] = useState(null);
+    const [selectedCustomerId, setSelectedCustomerId] = useState(null);
+    const [healthStatus, setHealthStatus] = useState('online');
+
+    useEffect(() => {
+        const checkHealth = async () => {
+            const h = await api.getHealth();
+            setHealthStatus(h.status === 'ok' ? 'online' : 'simulator');
+        };
+        checkHealth();
+    }, []);
+
+    const handleSelectTx = (txId) => {
+        setSelectedTxId(txId);
+    };
+
+    const handleNavigateCustomer = (customerId) => {
+        setSelectedCustomerId(customerId);
+        setSelectedTxId(null);
+        setActiveView('customers');
+    };
+
+    const handleNavigateRing = () => {
+        setSelectedTxId(null);
+        setActiveView('rings');
+    };
+
+    const renderView = () => {
+        switch (activeView) {
+            case 'overview':
+                return <Dashboard onNavigate={setActiveView} onSelectTransaction={handleSelectTx} />;
+            case 'rings':
+                return <RingExplorer onSelectTransaction={handleSelectTx} />;
+            case 'feed':
+                return <LiveFeed onSelectTransaction={handleSelectTx} />;
+            case 'queue':
+                return <ReviewQueue onSelectTransaction={handleSelectTx} />;
+            case 'customers':
+                return <CustomerProfiles initialCustomerId={selectedCustomerId} onSelectTx={handleSelectTx} />;
+            case 'metrics':
+                return <ModelMetrics />;
+            case 'simulator':
+                return <Simulator onTransactionInjected={(tx) => setActiveView('feed')} />;
+            default:
+                return <Dashboard onNavigate={setActiveView} onSelectTransaction={handleSelectTx} />;
+        }
+    };
 
     return (
-        <div className="flex h-screen bg-darkBg font-sans text-white selection:bg-neonPink/30 overflow-hidden">
-            <motion.div 
-                initial={{ x: -300 }}
-                animate={{ x: 0 }}
-                transition={{ type: "spring", stiffness: 100, damping: 20 }}
-                className="w-64 bg-sidebarBg flex flex-col flex-shrink-0 shadow-2xl z-20 relative border-r border-white/5"
-            >
-                <div className="p-6">
-                    <motion.div 
-                        initial={{ opacity: 0, y: -20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.2 }}
-                        className="flex items-center gap-3"
-                    >
-                        <div className="p-2 bg-gradient-to-tr from-neonPurple to-neonPink rounded-xl shadow-[0_0_20px_rgba(243,32,185,0.4)]">
-                            <Sparkles size={24} className="text-white" />
+        <div className="flex h-screen bg-darkBg font-sans text-textPrimary selection:bg-neonCyan/30 overflow-hidden bg-radial-vignette">
+            {/* Left Sleek Cyber Sidebar */}
+            <aside className="w-64 bg-sidebarBg flex flex-col flex-shrink-0 border-r border-cardBorder relative z-20 select-none">
+                {/* Brand Header */}
+                <div className="p-5 border-b border-cardBorder">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2.5 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 shadow-glow-cyan text-black">
+                            <Shield size={20} className="stroke-[2.5]" />
                         </div>
                         <div>
-                            <div className="text-xl font-black bg-clip-text text-transparent bg-gradient-to-r from-white to-white/70 tracking-tight">SHADOW CRM</div>
+                            <div className="flex items-center gap-1.5">
+                                <span className="text-base font-black tracking-wider text-white font-mono">SHADOW</span>
+                                <span className="text-base font-black tracking-wider text-neonCyan font-mono">TRACE</span>
+                            </div>
+                            <div className="text-[10px] text-textMuted uppercase tracking-widest font-semibold">
+                                Fraud Ring Intelligence
+                            </div>
                         </div>
-                    </motion.div>
+                    </div>
                 </div>
 
-                <nav className="flex-1 space-y-1.5 overflow-y-auto mt-4 px-2">
-                    <div className="text-[10px] font-bold text-textMuted uppercase tracking-widest mb-3 px-4">Menu</div>
-                    {Object.entries(views).map(([key, { label, icon }], idx) => (
-                        <motion.button
-                            key={key}
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: 0.3 + (idx * 0.1) }}
-                            whileHover={{ scale: 1.02, x: 5 }}
-                            whileTap={{ scale: 0.95 }}
-                            onClick={() => setActiveView(key)}
-                            className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl text-sm font-bold transition-all duration-300 relative ${
-                                activeView === key
-                                    ? 'text-white'
-                                    : 'text-textMuted hover:text-white'
-                            }`}
-                        >
-                            {activeView === key && (
-                                <motion.div 
-                                    layoutId="activeTab"
-                                    className="absolute inset-0 bg-gradient-to-r from-neonPurple/40 to-transparent border-l-4 border-neonPurple rounded-xl"
-                                    initial={false}
-                                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                                />
-                            )}
-                            <span className={`relative z-10 ${activeView === key ? 'text-neonPink drop-shadow-[0_0_8px_rgba(243,32,185,0.8)]' : 'text-textMuted'}`}>{icon}</span>
-                            <span className="relative z-10">{label}</span>
-                        </motion.button>
-                    ))}
+                {/* Navigation Links */}
+                <nav className="flex-1 space-y-1.5 p-3 overflow-y-auto">
+                    <div className="text-[10px] font-bold text-textSubtle uppercase tracking-widest px-3 py-2">
+                        Intelligence Operations
+                    </div>
+
+                    {navigationItems.map((item) => {
+                        const isActive = activeView === item.id;
+                        return (
+                            <button
+                                key={item.id}
+                                onClick={() => setActiveView(item.id)}
+                                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all relative group ${
+                                    isActive
+                                        ? 'bg-white/10 text-white shadow-card'
+                                        : 'text-textSecondary hover:text-white hover:bg-white/[0.04]'
+                                }`}
+                            >
+                                <div className="flex items-center gap-3">
+                                    <span className={isActive ? 'text-neonCyan' : 'text-textMuted group-hover:text-white transition-colors'}>
+                                        {item.icon}
+                                    </span>
+                                    <span>{item.label}</span>
+                                </div>
+
+                                {item.badge && (
+                                    <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-bold uppercase ${
+                                        item.badge === 'Critical'
+                                            ? 'bg-cyberRose/20 text-cyberRose border border-cyberRose/30'
+                                            : item.badge === '3 Active'
+                                            ? 'bg-neonPurple/20 text-neonPurple border border-neonPurple/30'
+                                            : 'bg-white/5 text-textMuted'
+                                    }`}>
+                                        {item.badge}
+                                    </span>
+                                )}
+
+                                {isActive && (
+                                    <motion.div
+                                        layoutId="activeNavIndicator"
+                                        className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-neonCyan rounded-r-full shadow-glow-cyan"
+                                    />
+                                )}
+                            </button>
+                        );
+                    })}
                 </nav>
 
-                <div className="p-6">
-                    <motion.div 
-                        whileHover={{ scale: 1.05 }}
-                        className="flex items-center gap-3 text-xs bg-black/20 p-3 rounded-xl border border-white/5"
-                    >
-                        <div className="w-2 h-2 rounded-full bg-neonCyan shadow-[0_0_10px_rgba(37,198,229,1)] animate-pulse"></div>
-                        <span className="text-textMuted font-medium tracking-wide">System Online</span>
-                    </motion.div>
-                </div>
-            </motion.div>
+                {/* Bottom Engine Telemetry Status */}
+                <div className="p-4 border-t border-cardBorder space-y-3 bg-black/20">
+                    <div className="flex items-center justify-between text-xs">
+                        <div className="flex items-center gap-2">
+                            <span className={`w-2 h-2 rounded-full ${healthStatus === 'online' ? 'bg-cyberEmerald animate-pulse shadow-glow-emerald' : 'bg-cyberAmber'}`} />
+                            <span className="text-textSecondary font-medium">Engine Mode</span>
+                        </div>
+                        <span className="font-mono text-[11px] font-bold text-white uppercase">
+                            {healthStatus === 'online' ? 'FastAPI Live' : 'Simulated Engine'}
+                        </span>
+                    </div>
 
-            <div className="flex-1 overflow-auto bg-darkBg relative z-10">
-                <main className="h-full p-8 perspective-1000">
+                    <div className="p-2.5 rounded-xl bg-black/40 border border-white/5 space-y-1 text-[11px] font-mono text-textMuted">
+                        <div className="flex justify-between">
+                            <span>Neo4j Graph:</span>
+                            <span className="text-neonPurple font-bold">5.20 Bolt</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span>PyG GNN:</span>
+                            <span className="text-neonCyan font-bold">GraphSAGE</span>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            {/* Main Application Content Body */}
+            <main className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
+                {/* Viewport View */}
+                <div className="flex-1 overflow-hidden">
                     <AnimatePresence mode="wait">
                         <motion.div
                             key={activeView}
-                            initial={{ opacity: 0, rotateX: 10, y: 20 }}
-                            animate={{ opacity: 1, rotateX: 0, y: 0 }}
-                            exit={{ opacity: 0, rotateX: -10, y: -20 }}
-                            transition={{ type: "spring", stiffness: 200, damping: 20 }}
+                            initial={{ opacity: 0, y: 8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -8 }}
+                            transition={{ duration: 0.15 }}
                             className="h-full"
                         >
-                            {views[activeView].component}
+                            {renderView()}
                         </motion.div>
                     </AnimatePresence>
-                </main>
-            </div>
+                </div>
+
+                {/* Slide-Over Detailed Investigation Drawer */}
+                <AnimatePresence>
+                    {selectedTxId && (
+                        <TransactionDetail
+                            txId={selectedTxId}
+                            onClose={() => setSelectedTxId(null)}
+                            onNavigateCustomer={handleNavigateCustomer}
+                            onNavigateRing={handleNavigateRing}
+                        />
+                    )}
+                </AnimatePresence>
+            </main>
         </div>
     );
 }

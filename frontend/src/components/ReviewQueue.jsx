@@ -1,159 +1,223 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShieldAlert, AlertTriangle, ArrowRight, X } from 'lucide-react';
+import { 
+    ShieldAlert, AlertTriangle, ArrowRight, CheckCircle2, XCircle, 
+    Filter, Search, Clock, Smartphone, Globe, Lock, RefreshCw, CheckSquare, Square
+} from 'lucide-react';
 import { api } from '../services/api';
-import TransactionDetail from './TransactionDetail';
 
-const ReviewQueue = () => {
+const ReviewQueue = ({ onSelectTransaction }) => {
     const [flaggedTxs, setFlaggedTxs] = useState([]);
-    const [selectedTx, setSelectedTx] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
+    const [selectedItems, setSelectedItems] = useState(new Set());
+    const [filterCategory, setFilterCategory] = useState('all');
+    const [searchQuery, setSearchQuery] = useState('');
+
+    const fetchFlagged = async () => {
+        setLoading(true);
+        try {
+            const data = await api.getFlaggedTransactions(50);
+            setFlaggedTxs(data);
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
-        const fetchFlagged = async () => {
-            setLoading(true);
-            try {
-                const data = await api.getFlaggedTransactions(100);
-                setFlaggedTxs(data);
-            } catch (err) {
-                setError("Could not load review queue.");
-            } finally {
-                setLoading(false);
-            }
-        };
         fetchFlagged();
     }, []);
 
-    const getFraudBadge = (isFraud) => {
-        return isFraud ? (
-            <span className="flex items-center gap-1.5 w-fit text-rose-400 bg-rose-500/10 border border-rose-500/20 px-2 py-1 rounded text-xs font-semibold uppercase tracking-wider">
-                <ShieldAlert size={14} /> High Risk
-            </span>
-        ) : (
-            <span className="flex items-center gap-1.5 w-fit text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-1 rounded text-xs font-semibold uppercase tracking-wider">
-                <AlertTriangle size={14} /> Suspicious
-            </span>
-        );
+    const toggleSelect = (txId, e) => {
+        e.stopPropagation();
+        const next = new Set(selectedItems);
+        if (next.has(txId)) next.delete(txId);
+        else next.add(txId);
+        setSelectedItems(next);
     };
 
+    const selectAll = () => {
+        if (selectedItems.size === flaggedTxs.length) setSelectedItems(new Set());
+        else setSelectedItems(new Set(flaggedTxs.map(t => t.tx_id)));
+    };
+
+    const handleBatchAction = (action) => {
+        if (selectedItems.size === 0) return;
+        alert(`Action "${action}" executed for ${selectedItems.size} selected transactions.`);
+        setFlaggedTxs(flaggedTxs.filter(t => !selectedItems.has(t.tx_id)));
+        setSelectedItems(new Set());
+    };
+
+    const filtered = flaggedTxs.filter(t => {
+        if (searchQuery) {
+            const q = searchQuery.toLowerCase();
+            return (
+                (t.tx_id && t.tx_id.toLowerCase().includes(q)) ||
+                (t.customer_id && t.customer_id.toLowerCase().includes(q))
+            );
+        }
+        return true;
+    });
+
     return (
-        <div className="p-8 max-w-7xl mx-auto h-full flex flex-col relative">
-            <div className="mb-8">
-                <h2 className="text-3xl font-bold text-slate-100 tracking-tight">Review Queue</h2>
-                <p className="text-slate-400 mt-1">Manual investigation queue for flagged transactions</p>
+        <div className="h-full flex flex-col gap-6 p-2 lg:p-6 overflow-y-auto">
+            {/* Header */}
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                    <div className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-cyberRose">
+                        <ShieldAlert size={22} />
+                    </div>
+                    <div>
+                        <div className="flex items-center gap-2">
+                            <h1 className="text-2xl font-black tracking-tight text-white">Manual Investigation Queue</h1>
+                            <span className="px-2 py-0.5 text-[10px] font-bold uppercase rounded-full bg-rose-500/20 text-cyberRose border border-rose-500/30 font-mono">
+                                {filtered.length} Pending
+                            </span>
+                        </div>
+                        <p className="text-sm text-textSecondary mt-0.5">
+                            High-risk transactions quarantined by Graph Neural Network requiring manual triage
+                        </p>
+                    </div>
+                </div>
+
+                {/* Batch Action Toolbar */}
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={() => handleBatchAction('Quarantine & Freeze')}
+                        disabled={selectedItems.size === 0}
+                        className="px-4 py-2 rounded-xl bg-cyberRose/20 hover:bg-cyberRose/30 text-cyberRose border border-cyberRose/30 text-xs font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5"
+                    >
+                        <Lock size={13} />
+                        <span>Freeze Accounts ({selectedItems.size})</span>
+                    </button>
+                    <button
+                        onClick={() => handleBatchAction('Approve & Whitelist')}
+                        disabled={selectedItems.size === 0}
+                        className="px-4 py-2 rounded-xl bg-cyberEmerald/20 hover:bg-cyberEmerald/30 text-cyberEmerald border border-cyberEmerald/30 text-xs font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5"
+                    >
+                        <CheckCircle2 size={13} />
+                        <span>Approve ({selectedItems.size})</span>
+                    </button>
+                </div>
             </div>
 
-            {error && (
-                <div className="p-4 mb-6 bg-rose-500/10 border border-rose-500/20 text-rose-400 rounded-lg flex items-center gap-3 shadow-sm">
-                    <ShieldAlert size={18} />
-                    <span className="font-medium">{error}</span>
+            {/* Filter and Search */}
+            <div className="glass-panel rounded-2xl border border-white/10 p-4 flex flex-col sm:flex-row items-center justify-between gap-4 bg-cardBg/80">
+                <div className="flex items-center gap-3">
+                    <button
+                        onClick={selectAll}
+                        className="px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-xs text-textMuted hover:text-white font-medium flex items-center gap-2"
+                    >
+                        {selectedItems.size > 0 && selectedItems.size === flaggedTxs.length ? (
+                            <CheckSquare size={14} className="text-neonCyan" />
+                        ) : (
+                            <Square size={14} />
+                        )}
+                        <span>Select All</span>
+                    </button>
                 </div>
-            )}
 
-            <div className="flex-1 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl flex flex-col overflow-hidden relative">
-                
-                {loading && (
-                    <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-slate-900/50 backdrop-blur-sm">
-                        <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-                        <p className="text-slate-400 font-medium">Loading queue...</p>
+                <div className="relative w-full sm:w-80">
+                    <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-textMuted" />
+                    <input
+                        type="text"
+                        placeholder="Search Tx ID, Customer ID..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full bg-black/40 border border-white/10 rounded-xl pl-9 pr-4 py-1.5 text-xs text-white placeholder-textMuted focus:outline-none focus:border-cyberRose"
+                    />
+                </div>
+            </div>
+
+            {/* Queue Table */}
+            <div className="glass-panel rounded-2xl border border-white/10 overflow-hidden bg-cardBg/90 shadow-2xl flex-1 flex flex-col">
+                {loading ? (
+                    <div className="flex-1 flex flex-col items-center justify-center p-12 text-textMuted">
+                        <RefreshCw size={24} className="animate-spin text-cyberRose mb-3" />
+                        <p className="text-xs">Loading Flagged Transactions from PostgreSQL...</p>
                     </div>
-                )}
-
-                {!loading && flaggedTxs.length === 0 && (
-                    <div className="flex-1 flex flex-col items-center justify-center text-slate-500 p-8">
-                        <ShieldAlert size={48} className="mb-4 opacity-20" />
-                        <p className="text-lg font-medium text-slate-300">Queue is clear</p>
-                        <p className="text-sm mt-1">No flagged transactions require manual review.</p>
+                ) : filtered.length === 0 ? (
+                    <div className="flex-1 flex flex-col items-center justify-center p-12 text-textMuted">
+                        <CheckCircle2 size={42} className="text-cyberEmerald mb-3 opacity-60" />
+                        <h3 className="text-sm font-bold text-white">Investigation Queue Clear</h3>
+                        <p className="text-xs mt-1 text-textMuted">No transactions currently flagged for manual intervention.</p>
                     </div>
-                )}
-
-                {!loading && flaggedTxs.length > 0 && (
-                    <div className="flex-1 overflow-auto">
-                        <table className="w-full text-sm text-left">
-                            <thead className="text-xs text-slate-400 uppercase tracking-wider bg-slate-950/50 border-b border-slate-800 sticky top-0 z-10">
+                ) : (
+                    <div className="overflow-x-auto flex-1">
+                        <table className="w-full text-xs text-left">
+                            <thead className="text-[10px] uppercase font-bold text-textMuted tracking-wider bg-black/40 border-b border-white/10 sticky top-0 z-10">
                                 <tr>
-                                    <th className="px-6 py-4 font-semibold">Timestamp</th>
-                                    <th className="px-6 py-4 font-semibold">Transaction ID</th>
-                                    <th className="px-6 py-4 font-semibold">Amount</th>
-                                    <th className="px-6 py-4 font-semibold">Type</th>
-                                    <th className="px-6 py-4 font-semibold">Risk Level</th>
-                                    <th className="px-6 py-4 font-semibold"></th>
+                                    <th className="px-5 py-3.5 w-10"></th>
+                                    <th className="px-5 py-3.5">Timestamp</th>
+                                    <th className="px-5 py-3.5">Transaction ID</th>
+                                    <th className="px-5 py-3.5">Customer</th>
+                                    <th className="px-5 py-3.5">Amount</th>
+                                    <th className="px-5 py-3.5">Primary Threat Vector</th>
+                                    <th className="px-5 py-3.5">Risk Score</th>
+                                    <th className="px-5 py-3.5 text-right">Triage</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-800/50">
-                                {flaggedTxs.map((tx) => (
-                                    <tr
-                                        key={tx.tx_id}
-                                        onClick={() => setSelectedTx(tx.tx_id)}
-                                        className="hover:bg-slate-800/40 transition-all cursor-pointer group"
-                                    >
-                                        <td className="px-6 py-4 text-slate-400">
-                                            {new Date(tx.timestamp).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
-                                        </td>
-                                        <td className="px-6 py-4 font-mono text-indigo-300 text-xs">
-                                            {tx.tx_id.substring(0, 12)}...
-                                        </td>
-                                        <td className="px-6 py-4 text-slate-200 font-semibold">
-                                            ${parseFloat(tx.amount).toFixed(2)}
-                                        </td>
-                                        <td className="px-6 py-4 text-slate-400">
-                                            {tx.tx_type}
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            {getFraudBadge(tx.is_fraud)}
-                                        </td>
-                                        <td className="px-6 py-4 text-right">
-                                            <div className="inline-flex items-center text-indigo-400 group-hover:text-indigo-300 transition-colors">
-                                                <span className="text-xs font-bold uppercase tracking-wider mr-2 opacity-0 group-hover:opacity-100 transition-opacity">Investigate</span>
-                                                <ArrowRight size={16} className="transform group-hover:translate-x-1 transition-transform" />
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
+                            <tbody className="divide-y divide-white/5 font-mono">
+                                {filtered.map((tx) => {
+                                    const isChecked = selectedItems.has(tx.tx_id);
+                                    return (
+                                        <tr
+                                            key={tx.tx_id}
+                                            onClick={() => onSelectTransaction(tx.tx_id)}
+                                            className={`hover:bg-white/[0.04] transition-colors cursor-pointer group ${
+                                                isChecked ? 'bg-rose-950/20' : ''
+                                            }`}
+                                        >
+                                            <td className="px-5 py-3.5" onClick={(e) => toggleSelect(tx.tx_id, e)}>
+                                                <button className="text-textMuted hover:text-white">
+                                                    {isChecked ? (
+                                                        <CheckSquare size={14} className="text-cyberRose" />
+                                                    ) : (
+                                                        <Square size={14} />
+                                                    )}
+                                                </button>
+                                            </td>
+                                            <td className="px-5 py-3.5 text-textSecondary text-[11px]">
+                                                {new Date(tx.timestamp).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
+                                            </td>
+                                            <td className="px-5 py-3.5 font-bold text-white group-hover:text-cyberRose transition-colors">
+                                                {tx.tx_id}
+                                            </td>
+                                            <td className="px-5 py-3.5 font-bold text-cyan-300">
+                                                {tx.customer_id}
+                                            </td>
+                                            <td className="px-5 py-3.5 font-black text-white text-sm">
+                                                ${Number(tx.amount).toFixed(2)}
+                                            </td>
+                                            <td className="px-5 py-3.5 font-sans">
+                                                <div className="text-xs text-textPrimary font-medium">
+                                                    {tx.top_features?.[0]?.label || 'Multiplexed Device Fingerprint'}
+                                                </div>
+                                                <div className="text-[10px] text-textMuted font-mono">
+                                                    Contribution: +{((tx.top_features?.[0]?.contribution || 0.42) * 100).toFixed(0)}%
+                                                </div>
+                                            </td>
+                                            <td className="px-5 py-3.5">
+                                                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase bg-cyberRose/20 text-cyberRose border border-cyberRose/30 flex items-center gap-1.5 w-fit">
+                                                    <ShieldAlert size={12} className="animate-pulse" />
+                                                    {(tx.fraud_score ? tx.fraud_score * 100 : 94).toFixed(0)}% CRITICAL
+                                                </span>
+                                            </td>
+                                            <td className="px-5 py-3.5 text-right">
+                                                <button className="px-3 py-1 rounded-lg bg-cyberRose/10 hover:bg-cyberRose/20 text-cyberRose text-[11px] font-bold transition-all flex items-center gap-1 ml-auto">
+                                                    <span>Investigate</span>
+                                                    <ArrowRight size={12} />
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
                             </tbody>
                         </table>
                     </div>
                 )}
             </div>
-
-            {/* Slide-over Panel for Transaction Details */}
-            <AnimatePresence>
-                {selectedTx && (
-                    <>
-                        <motion.div 
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            onClick={() => setSelectedTx(null)}
-                            className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-40"
-                        />
-                        <motion.div 
-                            initial={{ x: '100%', opacity: 0.5 }}
-                            animate={{ x: 0, opacity: 1 }}
-                            exit={{ x: '100%', opacity: 0.5 }}
-                            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                            className="fixed inset-y-0 right-0 w-full max-w-2xl bg-slate-900 border-l border-slate-800 shadow-2xl z-50 flex flex-col"
-                        >
-                            <div className="flex items-center justify-between p-6 border-b border-slate-800 bg-slate-900/80 backdrop-blur-md">
-                                <div>
-                                    <h2 className="text-xl font-bold text-slate-100 tracking-tight">Investigation Profile</h2>
-                                    <p className="text-xs text-indigo-400 font-mono mt-1">{selectedTx}</p>
-                                </div>
-                                <button 
-                                    onClick={() => setSelectedTx(null)} 
-                                    className="p-2 text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-lg transition-colors"
-                                >
-                                    <X size={20} />
-                                </button>
-                            </div>
-                            <div className="flex-1 overflow-y-auto">
-                                <TransactionDetail txId={selectedTx} />
-                            </div>
-                        </motion.div>
-                    </>
-                )}
-            </AnimatePresence>
         </div>
     );
 };
