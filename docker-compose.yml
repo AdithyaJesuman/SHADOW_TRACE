@@ -1,15 +1,5 @@
-# ============================================================
-# Docker Compose for SHADOW TRACE - Cloud-Ready
-# Only FastAPI backend service locally
-# PostgreSQL, Neo4j, Kafka, Redis configured via .env (cloud)
-# ============================================================
-
 version: '3.8'
-
 services:
-  # ============================================================
-  # SHADOW TRACE FastAPI Backend
-  # ============================================================
   shadow-trace-api:
     build:
       context: .
@@ -50,9 +40,6 @@ services:
       retries: 3
       start_period: 40s
 
-# ============================================================
-# Named Networks
-# ============================================================
 networks:
   shadow-trace:
     driver: bridge

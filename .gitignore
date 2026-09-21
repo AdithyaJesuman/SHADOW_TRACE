@@ -83,3 +83,6 @@ frontend/.env.local
 .python-version
 .pre-commit-config.yaml
 Thumbs.db
+
+
+.agents
